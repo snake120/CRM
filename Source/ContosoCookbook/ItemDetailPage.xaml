@@ -1,0 +1,312 @@
+﻿<common:LayoutAwarePage
+    x:Name="pageRoot"
+    x:Class="ContosoCookbook.ItemDetailPage"
+    DataContext="{Binding DefaultViewModel, RelativeSource={RelativeSource Self}}"
+    IsTabStop="false"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ContosoCookbook"
+    xmlns:data="using:ContosoCookbook.Data"
+    xmlns:common="using:ContosoCookbook.Common"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource CustomApplicationBackgroundBrush}"
+    Foreground="{StaticResource CustomApplicationTextBrush}"
+    >
+<!--demo change: foreground --> 
+    
+    <Page.Resources>
+        <common:ListConverter x:Key="ListConverter" />
+        <local:ProductLicenseDataSource x:Key="License" />
+        <common:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+                
+        <!-- Collection of items displayed by this page -->
+        <CollectionViewSource
+            x:Name="itemsViewSource"
+            Source="{Binding Items}"
+            d:Source="{Binding AllGroups[0].Items, Source={d:DesignInstance Type=data:SampleDataSource, IsDesignTimeCreatable=True}}"/>
+
+        <Style x:Key="BragAppBarButtonStyle" TargetType="Button" BasedOn="{StaticResource AppBarButtonStyle}">
+            <Setter Property="AutomationProperties.AutomationId" Value="BragAppBarButton"/>
+            <Setter Property="AutomationProperties.Name" Value="Brag"/>
+            <Setter Property="Content" Value="&#xE170;"/>
+        </Style>
+        <Style x:Key="ReminderAppBarButtonStyle" TargetType="Button" BasedOn="{StaticResource AppBarButtonStyle}">
+            <Setter Property="AutomationProperties.AutomationId" Value="ReminderAppBarButton"/>
+            <Setter Property="AutomationProperties.Name" Value="Reminder"/>
+            <Setter Property="Content" Value="&#xE121;"/>
+        </Style>
+    </Page.Resources>
+
+    <Page.BottomAppBar>
+        <AppBar x:Name="PageAppBar" Padding="10,0,10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50*"/>
+                    <!--<ColumnDefinition Width="50*"/>-->
+                </Grid.ColumnDefinitions>
+                <StackPanel x:Name="LeftCommands" Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left">
+                    <Button x:Name="BragButton" HorizontalAlignment="Left" Style="{StaticResource BragAppBarButtonStyle}" Click="OnBragButtonClicked" />
+                    <Button x:Name="PinRecipeButton" HorizontalAlignment="Left" Style="{StaticResource PinAppBarButtonStyle}" Click="OnPinRecipeButtonClicked" />
+                    <Button x:Name="ReminderButton" HorizontalAlignment="Left" Style="{StaticResource ReminderAppBarButtonStyle}" Click="OnReminderButtonClicked" />
+                </StackPanel>
+                <!--<StackPanel x:Name="RightCommands" Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right">
+                </StackPanel>-->
+            </Grid>
+        </AppBar>
+    </Page.BottomAppBar>
+
+    <!--
+        This grid acts as a root panel for the page that defines two rows:
+        * Row 0 contains the back button and page title
+        * Row 1 contains the rest of the page layout
+    -->
+    <Grid
+        Style="{StaticResource LayoutRootStyle}"
+        DataContext="{Binding Group}"
+        d:DataContext="{Binding AllGroups[0], Source={d:DesignInstance Type=data:SampleDataSource, IsDesignTimeCreatable=True}}">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="140"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Back button and page title -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="backButton" Click="GoBack" IsEnabled="{Binding Frame.CanGoBack, ElementName=pageRoot}" Style="{StaticResource BackButtonStyle}"/>
+            <TextBlock x:Name="pageTitle" Text="{Binding Title}" Style="{StaticResource PageHeaderTextStyle}" Grid.Column="1"/>
+        </Grid>
+
+        <!--
+            The remainder of the page is one large FlipView that displays details for
+            one item at a time, allowing the user to flip through all items in the chosen
+            group
+        -->
+        <FlipView
+            x:Name="flipView"
+            AutomationProperties.AutomationId="ItemsFlipView"
+            AutomationProperties.Name="Item Details"
+            TabIndex="1"
+            Grid.Row="1"
+            Margin="0,-3,0,0"
+            ItemsSource="{Binding Source={StaticResource itemsViewSource}}">
+
+            <FlipView.ItemTemplate>
+                <DataTemplate>
+                    <UserControl Loaded="StartLayoutUpdates" Unloaded="StopLayoutUpdates">
+                        <ScrollViewer x:Name="scrollViewer" Style="{StaticResource VerticalScrollViewerStyle}" Grid.Row="1">
+
+                            <!-- Three-column grid for item-detail layout -->
+                            <Grid Margin="120,0,20,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="400" />
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="360" />
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Vertical" Grid.Column="0">
+                                    <TextBlock FontSize="26.667" Foreground="Black" FontWeight="Light" Text="{Binding Title}" TextWrapping="Wrap"/>
+                                    <Image x:Name="image" Width="400" Margin="0,20,0,10" Stretch="Uniform" Source="{Binding Image}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- demo change: replaced fontsize/wieght with the style -->
+                                        <TextBlock Style="{StaticResource DetailsTextStyle}" Text="Preparation time:" />
+                                        <TextBlock Style="{StaticResource DetailsTextStyle}" Text="{Binding PrepTime}" Margin="8,0,8,0"/>
+                                        <TextBlock Style="{StaticResource DetailsTextStyle}" Text="minutes"/>
+                                    </StackPanel>
+                                    <!--demo change timer --> 
+                                    <Grid Margin="0,50,0,0" Width="400" Height="100" >
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Rectangle Fill="#20484035" Margin="0,0,8,0" />
+                                        
+                                        <TextBlock FontFamily="/Assets/DS-DIGIT.TTF#DS-Digital" FontSize="72" HorizontalAlignment="Left" VerticalAlignment="Center" Text="00:00:00" Margin="16,0,0,0" />
+                                        <Button Background="#484035" Grid.Column="1" Width="100" Height="100" Style="{StaticResource SolidColorButton}" Content="Start" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Vertical" Grid.Column="2">
+                                    <TextBlock FontSize="26.667" FontWeight="Light" Foreground="Black" Text="Ingredients" Margin="0,0,0,16"/>
+                                        <!-- demo change : replaced FontSize / FontWeight with a style -->
+                                        <TextBlock Style="{StaticResource DetailsTextStyle}" Text="{Binding Ingredients, Converter={StaticResource ListConverter}}" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Vertical" Grid.Column="4">
+                                    <TextBlock FontSize="26.667" Foreground="Black" FontWeight="Light" Text="Directions" Margin="0,0,0,16"/>
+                                    <ScrollViewer Style="{StaticResource VerticalScrollViewerStyle}">
+                                        <Grid>
+                                            <!-- demo change : replaced FontSize / FontWeight with a style -->
+                                            <TextBlock  Style="{StaticResource DetailsTextStyle}" Text="{Binding Directions}" TextWrapping="Wrap" Visibility="{Binding IsLicensed, Source={StaticResource License}, Converter={StaticResource BooleanToVisibilityConverter }}" />
+                                            <Button Width="225" Height="120" Background="#30ffffff" Style="{StaticResource PurchaseButton}" Click="OnPurchaseProduct" Visibility="{Binding IsTrial, Source={StaticResource License}, Converter={StaticResource BooleanToVisibilityConverter }}">
+                                                <Button.Content>
+                                                    <TextBlock Text="{Binding FormattedPrice, Source={StaticResource License}}" TextWrapping="Wrap" TextAlignment="Center" />
+                                                </Button.Content>
+                                            </Button>
+                                        </Grid>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Grid>
+
+                            <VisualStateManager.VisualStateGroups>
+                                <!-- Visual states reflect the application's view state inside the FlipView -->
+                                <VisualStateGroup x:Name="ApplicationViewStates">
+                                    <VisualState x:Name="FullScreenLandscape"/>
+                                    <VisualState x:Name="Filled"/>
+
+                                    <!-- Respect the narrower 100-pixel margin convention for portrait -->
+                                    <VisualState x:Name="FullScreenPortrait">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="image" Storyboard.TargetProperty="MaxHeight">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="400"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+
+                                    <!-- When snapped, the content is reformatted and scrolls vertically -->
+                                    <VisualState x:Name="Snapped">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="scrollViewer" Storyboard.TargetProperty="Style">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource VerticalScrollViewerStyle}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="image" Storyboard.TargetProperty="MaxHeight">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="160"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </ScrollViewer>
+                    </UserControl>
+                </DataTemplate>
+            </FlipView.ItemTemplate>
+        </FlipView>
+
+    <!-- FlipView used in portrait mode -->
+        <FlipView
+            x:Name="portraitFlipView"
+            AutomationProperties.AutomationId="ItemsFlipView"
+            AutomationProperties.Name="Item Details"
+            Grid.Row="1"
+            Margin="0,-3,20,0"
+            ItemsSource="{Binding Source={StaticResource itemsViewSource}}"
+            Visibility="Collapsed">
+
+            <FlipView.ItemTemplate>
+                <DataTemplate>
+                    <UserControl Loaded="StartLayoutUpdates" Unloaded="StopLayoutUpdates">
+                        <ScrollViewer x:Name="scrollViewer" Style="{StaticResource VerticalScrollViewerStyle}" Grid.Row="1">
+
+                            <!-- Vertical StackPanel for item-detail layout -->
+                            <StackPanel Orientation="Vertical" Margin="100,0,20,0">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock FontSize="26.667" FontWeight="Light" Text="{Binding Title}" TextWrapping="Wrap"/>
+                                    <Image x:Name="image" Width="400" Margin="0,20,0,40" Stretch="Uniform" Source="{Binding Image}" HorizontalAlignment="Left"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock FontSize="26.667" FontWeight="Light" Text="Ingredients" Margin="0,0,0,16"/>
+                                    <TextBlock FontSize="20" FontWeight="Light" LineHeight="32.5" Text="{Binding Ingredients, Converter={StaticResource ListConverter}}" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock FontSize="26.667" FontWeight="Light" Text="Directions" Margin="0,24,0,16"/>
+                                    <ScrollViewer Style="{StaticResource VerticalScrollViewerStyle}">
+                                        <Grid>
+                                            <TextBlock FontSize="20" FontWeight="Light" Text="{Binding Directions}" TextWrapping="Wrap" Visibility="{Binding IsLicensed, Source={StaticResource License}, Converter={StaticResource BooleanToVisibilityConverter }}" />
+                                            <Button Width="225" Height="120" Background="#30ffffff" Click="OnPurchaseProduct" Visibility="{Binding IsTrial, Source={StaticResource License}, Converter={StaticResource BooleanToVisibilityConverter }}">
+                                                <Button.Content>
+                                                    <TextBlock Text="{Binding FormattedPrice, Source={StaticResource License}}" TextWrapping="Wrap" TextAlignment="Center" />
+                                                </Button.Content>
+                                            </Button>
+                                        </Grid>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </UserControl>
+                </DataTemplate>
+            </FlipView.ItemTemplate>
+        </FlipView>
+        
+        <FlipView
+            x:Name="snappedFlipView"
+            AutomationProperties.AutomationId="ItemsFlipView"
+            AutomationProperties.Name="Item Details"
+            Grid.Row="1"
+            Margin="0,-3,0,0"
+            ItemsSource="{Binding Source={StaticResource itemsViewSource}}"
+            Visibility="Collapsed">
+
+            <FlipView.ItemTemplate>
+                <DataTemplate>
+                    <UserControl Loaded="StartLayoutUpdates" Unloaded="StopLayoutUpdates">
+                        <ScrollViewer x:Name="scrollViewer" Style="{StaticResource VerticalScrollViewerStyle}" Grid.Row="1">
+
+                            <!-- Vertical StackPanel for item-detail layout -->
+                            <StackPanel Orientation="Vertical" Margin="20,0,20,0">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock FontSize="20" FontWeight="Light" Text="{Binding Title}" TextWrapping="Wrap"/>
+                                    <Image x:Name="image" Width="260" Margin="0,12,0,40" Stretch="Uniform" Source="{Binding Image}" HorizontalAlignment="Left"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock FontSize="20" FontWeight="Light" Text="Ingredients" Margin="0,0,0,16"/>
+                                    <TextBlock FontSize="16" FontWeight="Light" TextWrapping="Wrap" Text="{Binding Ingredients, Converter={StaticResource ListConverter}}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </UserControl>
+                </DataTemplate>
+            </FlipView.ItemTemplate>
+        </FlipView>
+
+        <VisualStateManager.VisualStateGroups>
+
+            <!-- Visual states reflect the application's view state -->
+            <VisualStateGroup x:Name="ApplicationViewStates">
+                <VisualState x:Name="FullScreenLandscape"/>
+                <VisualState x:Name="Filled"/>
+
+                <!-- The back button respects the narrower 100-pixel margin convention for portrait -->
+                <VisualState x:Name="FullScreenPortrait">
+                    <Storyboard>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="backButton" Storyboard.TargetProperty="Style">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource PortraitBackButtonStyle}"/>
+                        </ObjectAnimationUsingKeyFrames>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="flipView" Storyboard.TargetProperty="Visibility">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="Collapsed"/>
+                        </ObjectAnimationUsingKeyFrames>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="portraitFlipView" Storyboard.TargetProperty="Visibility">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="Visible"/>
+                        </ObjectAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <!-- The back button and title have different styles when snapped -->
+                <VisualState x:Name="Snapped">
+                    <Storyboard>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="backButton" Storyboard.TargetProperty="Style">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource SnappedBackButtonStyle}"/>
+                        </ObjectAnimationUsingKeyFrames>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="pageTitle" Storyboard.TargetProperty="Style">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource SnappedPageHeaderTextStyle}"/>
+                        </ObjectAnimationUsingKeyFrames>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="flipView" Storyboard.TargetProperty="Visibility">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="Collapsed"/>
+                        </ObjectAnimationUsingKeyFrames>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="snappedFlipView" Storyboard.TargetProperty="Visibility">
+                            <DiscreteObjectKeyFrame KeyTime="0" Value="Visible"/>
+                        </ObjectAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </Grid>
+</common:LayoutAwarePage>
